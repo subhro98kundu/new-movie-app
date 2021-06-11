@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Credits</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="crossorigin="anonymous"></script>
+</head>
+<style type="text/css">
+	body{
+		background-image: linear-gradient(rgba(0,0,0.8,0.7),rgba(0,0,0,0.2)),url(https://images3.alphacoders.com/606/606650.jpg);
+		background-size: 100% 100%;
+		font-family: lucida handwriting;
+		color: white;
+	}
+	/*https://images2.alphacoders.com/721/721152.jpg*//*ww*/
+	/*https://images3.alphacoders.com/606/606650.jpg*//*batman\superman*/
+	img{
+		border-radius: 10px;
+	}
+	.jumbotron{
+		border-bottom: 2px solid black;
+	}
+	.bg-nav{
+		background-color: #000;
+	}
+	.navbar ul,li{
+		display: inline-block;
+	}
+	.navbar li{
+		font-size: 16px;
+		margin-right: 1px;
+		color: white;
+		padding: 30px;
+		background-color: #333;
+		border-radius: 5px;
+	}
+	.navbar li:hover{
+		background-color:#888;
+		margin-right: 10px;
+		border-radius: 10px; 
+	}
+	.container{
+		max-width: 80%;
+		background: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.6));
+	}
+	.known-container{
+		white-space: nowrap;
+		overflow: auto;
+		padding: 30px;
+		box-shadow: 10px 10px 20px black;
+	}
+	.movie-container{
+		max-width: 80%;
+		vertical-align: center;
+	}
+	.card{
+		display: inline-block;
+		background-color: #000;
+		width: 175px;
+		padding: 0px;
+		height:300px;
+		border: 0px solid #eee;
+		border-radius: 10px;
+		margin-bottom: 10px;
+	}
+	.card-body{
+		
+		padding: 5px;
+	}
+
+	.card:hover{
+		cursor: pointer;
+	    background: linear-gradient(to left, #555555 0%, #000000 63%);
+		margin-right: 5px;
+		box-shadow: 5px 5px 10px #000;
+		max-width: 99%;
+		transition: max-width 3s ease-out;
+	}
+	.card-body:hover{
+		padding-right: 0px;
+		padding-top: 0px;
+		padding-left: 0px;
+		transition: padding-right 0.1s ease-out;
+		transition: padding-top 0.1s ease-out;
+		transition: padding-left 0.1s ease-out;
+	}
+</style>
+<script type="text/javascript">
+	$(document).ready(function(){
+		var api_key = "d46a7184cfa1f6f413328cddfc89ba19";
+		var url = window.location.search;
+		var urlParams = new URLSearchParams(url);
+		var credit_id = urlParams.get('creditid');
+		var person_id = urlParams.get('personid');
+		var img_url = "https://image.tmdb.org/t/p/w500";
+		console.log(img_url);
+		console.log(person_id);
+		var person_api = "https://api.themoviedb.org/3/person/"+person_id+"?api_key="+ api_key +"&language=en-US";
+		var credit_api = "https://api.themoviedb.org/3/credit/"+credit_id+"?api_key="+ api_key;
+		var combined_credits = "https://api.themoviedb.org/3/person/"+person_id+"/combined_credits?api_key="+api_key+"&language=en-US";
+		//hitting the person api
+
+
+		$.ajax({
+			type: 'GET',
+			url: person_api,
+			success: function(data){
+				console.log(data);
+				var name = data.name;
+				var gender = data.gender == 1 ? 'Female' : 'Male';
+				console.log(gender);
+				var alt_prof = data.gender==2 ? 'img/alt_prof_male.jpg' : 'img/alt_prof_female.png';
+				var img = img_url + data.profile_path;
+				var known_for = data.known_for_department;
+				var birthday = data.birthday;
+				var bio = data.biography;
+				var place_of_birth = data.place_of_birth;
+				var also_known_as = data.also_known_as;
+				//console.log(img);
+				$('#name').html(name);
+				$('#profile_img').html(`<img src="${img}" style="width: 100%" onerror = "this.src='${alt_prof}'">`);
+				$('#gender').html(gender);
+				$('#known_for').html(known_for);
+				console.log(known_for);
+				$('#birthday').html(birthday);
+				$('#bio').html(bio);
+				$('#place_of_birth').html(place_of_birth);
+				$.each(data.also_known_as, function(index, value){
+					$('#also_known_as').append(`<p>${value}</p>`);
+				})
+			},
+			error: function(error){
+				console.log(error);
+			}
+		})
+		$.ajax({
+			type: 'GET',
+			url: credit_api,
+			success: function(data){
+				console.log(data);
+				for(var i=0;i<data.person.known_for.length;i++){
+					$('#known_for_container').append(`<a href="movie_description.html?id=${data.person.known_for[i].id}" style="text-decoration:none;"><div class="card ml-3">
+						<div class="card-body" align="center">
+							<img src="https://www.themoviedb.org/t/p/w500${data.person.known_for[i].poster_path}" style="width: 100%;">
+							<p style="font-size:10px; overflow:hidden; text-overflow:ellipsis;" class="mt-2">${data.person.known_for[i].title}</p>
+						</div>
+					</div></a>`);
+				};
+			},
+			error: function(error){
+				console.log(error);
+			}
+		})
+		$.ajax({
+			type: 'GET',
+			url: combined_credits,
+			success: function(data){
+				console.log(data);
+				for(var i=0;i<data.cast.length;i++){
+					var release_date;
+					try{release_date = data.cast[i].media_type == 'tv'? data.cast[i].first_air_date : data.cast[i].release_date;}
+					catch(err){release_date = "----.--.--";}
+					if(release_date == undefined){
+						release_date = "----.--.--";
+					}
+					var title = data.cast[i].media_type == 'tv'? data.cast[i].name : data.cast[i].title;
+					$('#works').append(`<a href="movie_description.html?id=${data.cast[i].id}" style="text-decoration: none;">
+						<div class="row">
+						<div class="col-2"><p class="text-white">${release_date.substring(0,4)}</p></div>
+						<div class="col-10"><p class="text-white">${title}<small class="text-muted"> as ${data.cast[i].character}</small></p>
+						</div>
+						<hr>
+					</div>
+					</a>`);
+					console.log(i);
+				}
+			},
+			error: function(error){
+				console.log(error);
+			}
+		})
+	})
+</script>
+<body>
+	<nav class="navbar bg-nav">
+		<h1 class="navbar-brand text-white" style="font-size: 28px;">Movie App</h1>
+		<span>
+			<ul class="navbar-nav">
+				<a href="index.html">
+				<li class="nav-item-active">Movies</li></a>
+				<li class="nav-item">Series</li>
+			</ul>
+		</span>
+	</nav>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-4">
+				<div id="profile_img"></div>
+				
+				<div style="padding: 10px; padding-left: 30px;">
+					<h4>Personal Info</h3><br>
+					<h6>Known for</h6>
+					<p id="known_for">Acting</p>
+					<br>
+					<h6>Known Credits</h6>
+					<p class="known_credits">44</p>
+					<br>
+					<h6>Gender</h6>
+					<p id="gender">Male</p>
+					<br>
+					<h6>Birthday</h6>
+					<p id="birthday">21-10-1998</p>
+					<br>
+					<h6>Place of Birth</h6>
+					<p id="place_of_birth">Cardiff, Wales, UK</p>
+					<br>
+					<h6>Also Known As</h6>
+					<div id="also_known_as"></div>
+				</div>
+			</div>
+			<div class="col-8">
+				<h2 id="name">Tom Ellis</h2>
+				<br>
+				<h5>Biography</h5>
+				<p id="bio" style="font-size: 16px;">Tom Ellis is a Welsh actor, best known for playing Dr. Oliver Cousins in the BBC soap opera "EastEnders" and Detective Sergeant Sam Speed in a "Life on Mars" parody in the "The Catherine Tate Show. He was also Sam in the BBC comedy "Pulling", and plays Gary in Miranda Hart's BBC2 comedy "Miranda".  Other notable roles include Justyn in Channel 4's "No Angels" and Thomas Milligan in the series three finale of British science-fiction television programme "Doctor Who". He also starred in the ITV comedy drama "Monday Monday" during July and August 2009 alongside Fay Ripley.
+l
+				Elis is married to actress Tamzin Outhwaite. The family moved to England and Ellis attended High Storrs School in Sheffield and was a French Horn player in the City of Sheffield Youth Orchestra. He was also a huge Sheffield Wednesday fan, but now supports Arsenal.</p><br>
+				<h5>Known For</h5>
+				<div class="known-container" id="known_for_container">
+					
+				</div>
+				<br><br>
+				<div id="works" style="box-shadow: 10px 10px 20px black; padding: 20px;">
+					
+					
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Movie Description</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="crossorigin="anonymous"></script>
+</head>
+<script type="text/javascript">
+	$(document).ready(function(){
+		// fetch the movie id
+		var url = window.location.search;
+		var urlParams = new URLSearchParams(url);
+		var movie_id = urlParams.get('id');
+
+		// hit the api with the movie id
+		$.ajax({
+			url: `https://api.themoviedb.org/3/movie/${movie_id}?api_key=8265bd1679663a7ea12ac168da84d2e8&language=en-US`,
+			type : 'GET',
+			success: function(data){
+
+				var backdrop_path = 'https://image.tmdb.org/t/p/w500/' + data.backdrop_path;
+				var poster_path = 'https://image.tmdb.org/t/p/w500/' + data.poster_path;
+				var movie_name = data.title;
+				var release_date = data.release_date;
+				var runtime = data.runtime;
+				var tagline = data.tagline;
+				var overview = data.overview;
+				var movie_rating = data.vote_average.toFixed(1);
+				$.ajax({
+					type: "GET",
+					url: `https://api.themoviedb.org/3/movie/${movie_id}/watch/providers?api_key=d46a7184cfa1f6f413328cddfc89ba19`,
+					success: function(data){
+						
+						var li = data.results['IN'].link;
+						var provider_name = '';
+						//console.log(data);
+						for(var i = 0; i<data.results['IN'].flatrate.length; i++){
+							//console.log(data);
+							var provider_logo = 'https://image.tmdb.org/t/p/w500'+data.results['IN'].flatrate[i].logo_path;
+							provider_name += data.results['IN'].flatrate[i].provider_name + ' ';
+							//var provider_logo = data.flatrate[i].logo_path;
+							//console.log(provider_logo);
+							$('#stream').append(`<img src="${provider_logo}" style="width:40px; border-radius:5px; margin-right:5px;">`);
+						}
+						$('#stream').append(`<a href="${li}"><span>Stream on: ${provider_name}</span></a>`);
+
+					},
+					error: function(){
+						console.log(data);
+					}
+
+				});
+
+				$('.jumbotron').css('background-image',`linear-gradient(rgba(0,0,1,0.9),rgba(1,0,1,0.8)),url(${backdrop_path})`);
+				console.log(data);
+
+				$('#poster').html(`<img src="${poster_path}" style="width: 100%;height:450px;border-radius: 10px">`);
+
+				$('#movie-name').html(movie_name+' ('+release_date.substring(0,4)+')');
+				$('#movie_rating').html(movie_rating);
+				$('#release-date').html(release_date);
+				$('#runtime').html(runtime + " mins");
+				$('#tagline').html(tagline);
+				$('#overview').html(overview);
+
+				var genres = '';
+
+				for(var i=0;i<data.genres.length;i++){
+					genres = genres + data.genres[i].name + ' ';
+				}
+
+				$('#genres').html(genres);
+
+				//hit crew api
+				$.ajax({
+					url: `https://api.themoviedb.org/3/movie/${movie_id}/credits?api_key=d46a7184cfa1f6f413328cddfc89ba19&language=en-US`,
+					type : 'GET',
+					success: function(data){
+						console.log(data);
+						var cast_name, character_name, department, popularity, prof_img, gender, alt_prof_img_cast;
+						var crew_name, job, department_crew, popularity_crew, prof_img_crew, gender_crew, alt_prof_img_crew;
+						var no_of_cast_displayed = Math.min(6, data.cast.length);
+						for(var i=0; i<no_of_cast_displayed; i++){
+							//Extracting cast details...
+							cast_name = data.cast[i].name;
+							character_name = data.cast[i].character;
+							department = data.cast[i].known_for_department;
+							popularity = data.cast[i].popularity;
+							if(data.cast[i].gender == 2){
+								gender = 'Male';
+								alt_prof_img_cast = 'img/alt_prof_male.jpg';
+							}
+							else{
+								gender = 'Female';
+								alt_prof_img_cast = 'img/alt_prof_female.png';
+							}
+							prof_img = 'https://image.tmdb.org/t/p/w500' + data.cast[i].profile_path;
+
+							//extracting crew details...
+							crew_name = data.crew[i].name;
+							job = data.crew[i].job;
+							department_crew = data.crew[i].known_for_department;
+							popularity_crew = data.crew[i].popularity;
+							if(data.crew[i].gender == 2){
+								gender_crew = 'Male';
+								alt_prof_img_crew = "img/alt_prof_male.jpg";
+							}
+							else{
+								gender_crew = 'Female';
+								alt_prof_img_crew = "img/alt_prof_female.png";
+							}
+							
+							prof_img_crew = 'https://image.tmdb.org/t/p/w500' + data.crew[i].profile_path; 
+
+
+							$('#display-cast').append(`
+															<div class="col-2"><a href="cast_crew.html?creditid=${data.cast[i].credit_id}&personid=${data.cast[i].id}" style="text-decoration: none;">
+																<div class="card">
+																	<div class="card-body">
+																		<img class="prof_img" src="${prof_img}" onerror="this.src='${alt_prof_img_cast}';">
+																		<h5 class="mt-3" style="color: blue;" id="real_name">${cast_name}</h5>
+																		<p class="text-muted mt-2 unhide" id="char_name"><small>${character_name}</small></p>
+																		<p class="hide text-muted"><small>Gender: ${gender}<br>Department: ${department}<br>Popularity: ${popularity}</small></p>
+																	</div>
+																</div></a>
+															</div>
+								`);
+
+							$('#display-crew').append(`
+															<div class="col-2"><a href="cast_crew.html?creditid=${data.crew[i].credit_id}&personid=${data.crew[i].id}" style="text-decoration: none;">
+																<div class="card">
+																	<div class="card-body">
+																		<img class="prof_img" src="${prof_img_crew}" onerror="this.src='${alt_prof_img_crew}';">
+																		<h5 class="mt-3" style="color: blue;" id="real_name">${crew_name}</h5>
+																		<p class="text-muted mt-2 unhide" id="char_name"><small>${job}</small></p>
+																		<p class="hide text-muted"><small>Gender: ${gender_crew}<br>Department: ${department_crew}<br>Popularity: ${popularity_crew}</small></p>
+																	</div>
+																</div></a>
+															</div>
+								`);
+						}
+					},
+					error: function(error){
+					console.log(error);
+					}
+				})
+
+				//hit the videos api
+				$.ajax({
+					type: "GET",
+					url: `https://api.themoviedb.org/3/movie/${movie_id}/videos?api_key=8265bd1679663a7ea12ac168da84d2e8&language=en-US`,
+					success: function(data){
+						//console.log(data);
+						for(var i=0; i < data.results.length; i++){
+							var youtube_video_key = data.results[i].key;
+							var video_name = data.results[i].name;
+							$('#videos').append(`<iframe width="560" height="315" src="https://www.youtube.com/embed/${youtube_video_key}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+						}
+
+					},
+					error: function(){
+						console.log(data);
+					}
+
+				});
+
+				//hit the reviews api
+				$.ajax({
+					type: "GET",
+					url: `https://api.themoviedb.org/3/movie/${movie_id}/reviews?api_key=d46a7184cfa1f6f413328cddfc89ba19&language=en-US&page=1`,
+					success: function(data){
+						console.log(data);
+						var arr = data.results;
+						for(var i=0; i<arr.length; i++){
+							var author = arr[i].author;
+							var avatar = 'https://image.tmdb.org/t/p/w500' + arr[i].author_details.avatar_path;
+							var content = arr[i].content;
+							var rating = arr[i].author_details.rating.toFixed(1);
+							$('#reviews').append(`
+								<div class="row">
+									<div class="col-4 mt-5">
+										<img src="${avatar}" style="width: 100%;" onerror="this.src='img/alt_prof_male.jpg'">
+									</div>
+									<div class="col-8 mt-5">
+										<h3 class="mt-5">${author}</h3>
+										<p><small style="padding:6px; background-color:red;">${rating}</small></p>
+										<p style="font-size:10px;">${content}</p>
+									</div>
+								</div>
+							`);
+						}
+					}
+				})
+				
+				// hit the recommendation api
+				$.ajax({
+					url : `https://api.themoviedb.org/3/movie/${movie_id}/similar?api_key=8265bd1679663a7ea12ac168da84d2e8&language=en-US`,
+					type : 'GET',
+					success: function(data){
+						if(data.results.length){
+						for(var i = 0; i<data.results.length; i++){
+							//console.log(data);
+							var title = data.results[i].title;
+							var release_date = data.results[i].release_date;
+							var poster_url = 'https://image.tmdb.org/t/p/w500/' + data.results[i].poster_path;
+							var movie_id = data.results[i].id;
+
+							var output = `
+								<div class="col-2">
+							
+							<div class="card">
+							<div class="card-body">
+							<a href="movie_description.html?id=${movie_id}" style="text-decoration:none;" width="100%">
+								<img src="${poster_url}" style="width: 100%; height: 250px;">
+								<h6>${title}</h6>
+								<p class="text-muted">${release_date}</p>
+								</a>
+								</div>
+								</div>
+								
+							</div><br><br>
+								`;
+							$('#display-movies').append(output);
+						}
+					}else{
+						$('#recomended').remove();
+					}
+					},
+					error: function(error){
+						console.log(error);
+					}
+				})
+
+			}, error: function(error){ console.log(error); 
+			} 
+		}) 
+	}) 
+</script> 
+<style type="text/css"> 
+	body{
+		background-image:linear-gradient(rgba(0,0,0.8,0.7),rgba(0,0,0,0.2)),url(https://images.hdqwalls.com/wallpapers/wonder-woman-dark-2020-3b.jpg);
+		background-size: 400% 100%; font-family: lucida handwriting; color: white; }
+
+	.video-container::-webkit-scrollbar { 
+	width: 2px;              /* width of the entire scrollbar */
+	height: 10px; 
+	}
+
+	.video-container::-webkit-scrollbar-track {
+	  background: black;        /* color of the tracking area */
+	}
+
+	.video-container::-webkit-scrollbar-thumb {
+	  background-color: white;    /* color of the scroll thumb */
+	  border-radius: 20px;       /* roundness of the scroll thumb */
+	  border: 0px solid white;  /* creates padding around scroll thumb */
+	}
+	img{
+		border-radius: 10px;
+	}
+	.bg-nav{
+		background-color: #000;
+	}
+	.container{
+		max-width: 1300px;
+	}
+	.jumbotron{
+		background-image: linear-gradient(rgba(0,0,0,0.9),rgba(0,0,0,0.9)),url('https://image.tmdb.org/t/p/w500//lkInRiMtLgl9u9xE0By5hqf66K8.jpg');
+		background-repeat: no-repeat;
+		background-size: cover;
+		height: 600px;
+	}
+	.card{
+		background-color: #000;
+		padding: 0px;
+		height:400px;
+		border: 0.5px solid #000;
+		margin-bottom: 0px;
+		border-radius: 10px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.card-body{
+		
+		padding: 0px;
+	}
+	.video-container{
+background: #0f0c29;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #24243e, #302b63, #0f0c29);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #24243e, #302b63, #0f0c29); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+background: linear-gradient(to left, #555555 0%, #000000 63%);
+
+
+
+		white-space: nowrap;
+		overflow: auto;
+		padding: 30px;
+		box-shadow: 10px 10px 20px black;
+	}
+	iframe{
+		border-radius: 15px;
+		margin-top: 20px;
+		margin: 5px;
+	}
+	iframe:hover{
+		margin-bottom: 20px;
+	}
+	.card:hover{
+		cursor: pointer;
+		background: linear-gradient(to left, #555555 0%, #000000 63%);
+		margin-right: 5px;
+		box-shadow: 5px 5px 5px #000;
+		padding-right: 3px;
+	}
+	.prof_img{
+		width: 100%;
+		height: 275px;
+	}
+	.review-container{
+		background-color: black;
+		opacity: 0.8;
+	}
+	.hide{
+		opacity: 0;
+		font-size: 0px;
+		position: absolute;
+		transform: translateY(100%);
+		transition: transform 0.3s ease-in;
+	}
+	.card:hover .prof_img{
+		height: 200px;
+		transition: height 0.3s ease-in;
+	}
+	.card:hover .hide{
+		opacity: 1;
+		font-size: 14px;
+		transform: translateY(0);
+		transition: transform 0.3s ease-in;
+		transition: opacity 0.5s ease-in;
+	}
+	.unhide{
+		visibility: visible;
+	}
+	.card:hover .unhide{
+		/*visibility: hidden;
+		font-size: 0px;
+		margin: 0px;*/
+	}
+</style>
+<body>
+
+	<nav class="navbar bg-nav">
+		<h3 class="navbar-brand text-white"><b>Movie App</b></h3>
+	</nav>
+
+	<div class="jumbotron">
+		<div class="container">
+			<div class="row">
+				<div class="col-3" id="poster">
+					
+				</div>
+				<div class="col-9 text-white">
+					<br><br>
+					<h1 style="color: white;"><span id="movie-name"><b></b></span><span style="float: right; color: white; font-size: 16px; background-color: red; font-family: verdana; padding-right: 10px; padding-left: 10px; padding-top: 2px; padding-bottom: 2px; border-radius: 5px;" id="movie_rating"></span></h1>
+					<h5 class="text-muted"><span id="release-date"></span><span> . </span></span><span id="genres"></span> <span> . </span> <span id="runtime">2h 4m</span></h5><br>
+
+					<h5 id="tagline" style="color: red;"></h5>
+					<h4 class="mt-5">Overview</h4>
+					<p id="overview" class="text-muted"></p>
+					<div id="stream" class="p-3"></div>
+					
+				</div>
+			</div>
+		</div>
+		
+	</div>
+
+	<div class="container cast-container" id="credits" style="margin-bottom: 90px;">
+		<h2>Cast</h2>
+		<div class="row" id="display-cast" style="margin-bottom: 90px;">
+			
+		</div>
+
+		<h2>Crew</h2>
+		<div class="row" id="display-crew">
+			
+		</div>
+			
+	</div>
+
+	<div class="video-container mb-5" style="" id="videos">
+		<h1 class="mb-5">Trailers & Clips</h1>
+		
+	</div>
+
+	<div class="container mb-5">
+		<h1>Reviews</h1>
+		<div class="container review-container" id="reviews">
+			
+		</div>
+	</div>
+
+	<div class="container">
+		<h1 class="mb-5" id="recomended">Recommended Movies</h1>
+		<div class="row" id="display-movies">
+			
+		</div>
+	</div>
+
+
+
+</body>
+</html>
